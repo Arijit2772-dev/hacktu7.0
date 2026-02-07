@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   HomeIcon, ChartBarIcon, ArchiveBoxXMarkIcon,
   ArrowsRightLeftIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
+  CubeIcon, BuildingStorefrontIcon,
 } from '@heroicons/react/24/outline'
 
 const nav = [
@@ -12,6 +13,8 @@ const nav = [
   { to: '/admin/dead-stock', icon: ArchiveBoxXMarkIcon, label: 'Dead Stock' },
   { to: '/admin/transfers', icon: ArrowsRightLeftIcon, label: 'Transfers' },
   { to: '/admin/dealers', icon: UserGroupIcon, label: 'Dealer Performance' },
+  { to: '/admin/products', icon: CubeIcon, label: 'Products' },
+  { to: '/admin/warehouses', icon: BuildingStorefrontIcon, label: 'Warehouses' },
 ]
 
 const scenarioColors = {

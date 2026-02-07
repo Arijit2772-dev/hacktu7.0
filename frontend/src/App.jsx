@@ -11,6 +11,8 @@ import DemandForecast from './pages/admin/DemandForecast'
 import DeadStock from './pages/admin/DeadStock'
 import Transfers from './pages/admin/Transfers'
 import DealerPerformance from './pages/admin/DealerPerformance'
+import ProductManagement from './pages/admin/ProductManagement'
+import WarehouseManagement from './pages/admin/WarehouseManagement'
 import DealerDashboard from './pages/dealer/Dashboard'
 import SmartOrders from './pages/dealer/SmartOrders'
 import OrderTracking from './pages/dealer/OrderTracking'
@@ -33,6 +35,8 @@ export default function App() {
         <Route path="dead-stock" element={<DeadStock />} />
         <Route path="transfers" element={<Transfers />} />
         <Route path="dealers" element={<DealerPerformance />} />
+        <Route path="products" element={<ProductManagement />} />
+        <Route path="warehouses" element={<WarehouseManagement />} />
       </Route>
       <Route path="/dealer" element={
         <ProtectedRoute role="dealer"><DealerLayout /></ProtectedRoute>
