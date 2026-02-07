@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import AlertBadge from '../../components/common/AlertBadge'
 import IndiaWarehouseMap from '../../components/maps/IndiaWarehouseMap'
-import { fetchTransfers, approveTransfer, fetchInventoryMap } from '../../api/admin'
+import { fetchTransfers, approveTransfer, autoBalance, fetchInventoryMap } from '../../api/admin'
 
 export default function Transfers() {
   const [transfers, setTransfers] = useState([])
@@ -26,10 +26,22 @@ export default function Transfers() {
     try {
       const res = await approveTransfer(id)
       setToast(res.data.message)
-      load() // Refresh data (optimistic update from backend)
+      load()
       setTimeout(() => setToast(null), 5000)
     } catch {
       setToast('Failed to approve transfer')
+      setTimeout(() => setToast(null), 3000)
+    }
+  }
+
+  const handleAutoBalance = async (id) => {
+    try {
+      const res = await autoBalance(id)
+      setToast(res.data.message)
+      load()
+      setTimeout(() => setToast(null), 5000)
+    } catch {
+      setToast('Failed to auto-balance transfer')
       setTimeout(() => setToast(null), 3000)
     }
   }
@@ -89,7 +101,7 @@ export default function Transfers() {
                     Approve
                   </button>
                   <button
-                    onClick={() => handleApprove(t.id)}
+                    onClick={() => handleAutoBalance(t.id)}
                     className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-lg transition-colors"
                   >
                     Auto-Balance

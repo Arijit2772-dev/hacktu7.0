@@ -1,8 +1,9 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useSimulation } from '../contexts/SimulationContext'
+import { useAuth } from '../contexts/AuthContext'
 import {
   HomeIcon, ChartBarIcon, ArchiveBoxXMarkIcon,
-  ArrowsRightLeftIcon, UserGroupIcon,
+  ArrowsRightLeftIcon, UserGroupIcon, ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 
 const nav = [
@@ -22,6 +23,13 @@ const scenarioColors = {
 
 export default function AdminLayout() {
   const { scenario, setScenario } = useSimulation()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   return (
     <div className="flex h-screen bg-gray-950 text-white">
@@ -50,8 +58,17 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-gray-800 text-xs text-gray-600">
-          System Date: Oct 10, 2025
+        <div className="p-4 border-t border-gray-800 space-y-2">
+          <div className="text-xs text-gray-400">
+            {user?.full_name || 'Admin'} | Oct 10, 2025
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-xs text-gray-500 hover:text-red-400 transition-colors w-full"
+          >
+            <ArrowRightOnRectangleIcon className="w-4 h-4" />
+            Sign Out
+          </button>
         </div>
       </aside>
 

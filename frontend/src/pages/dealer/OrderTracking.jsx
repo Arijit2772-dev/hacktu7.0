@@ -4,10 +4,11 @@ import AlertBadge from '../../components/common/AlertBadge'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { fetchOrders } from '../../api/dealer'
 import { formatCurrency, formatDate } from '../../utils/formatters'
-
-const DEALER_ID = 1
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function OrderTracking() {
+  const { user } = useAuth()
+  const DEALER_ID = user?.dealer_id || 1
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
 

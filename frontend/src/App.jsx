@@ -1,5 +1,8 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
+import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 import AdminLayout from './layouts/AdminLayout'
 import DealerLayout from './layouts/DealerLayout'
 import CustomerLayout from './layouts/CustomerLayout'
@@ -20,19 +23,27 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/admin" element={
+        <ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>
+      }>
         <Route index element={<AdminDashboard />} />
         <Route path="forecast" element={<DemandForecast />} />
         <Route path="dead-stock" element={<DeadStock />} />
         <Route path="transfers" element={<Transfers />} />
         <Route path="dealers" element={<DealerPerformance />} />
       </Route>
-      <Route path="/dealer" element={<DealerLayout />}>
+      <Route path="/dealer" element={
+        <ProtectedRoute role="dealer"><DealerLayout /></ProtectedRoute>
+      }>
         <Route index element={<DealerDashboard />} />
         <Route path="smart-orders" element={<SmartOrders />} />
         <Route path="orders" element={<OrderTracking />} />
       </Route>
-      <Route path="/customer" element={<CustomerLayout />}>
+      <Route path="/customer" element={
+        <ProtectedRoute role="customer"><CustomerLayout /></ProtectedRoute>
+      }>
         <Route index element={<ShadeCatalog />} />
         <Route path="shade/:shadeId" element={<ShadeDetail />} />
         <Route path="find-near-me" element={<FindNearMe />} />

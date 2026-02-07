@@ -3,6 +3,7 @@ from app.models.inventory import Region, Warehouse, InventoryLevel, InventoryTra
 from app.models.dealer import Dealer, DealerOrder
 from app.models.sales import SalesHistory
 from app.models.customer import CustomerOrderRequest
+from app.models.user import User
 
 __all__ = [
     "Product", "Shade", "SKU",
@@ -10,4 +11,5 @@ __all__ = [
     "Dealer", "DealerOrder",
     "SalesHistory",
     "CustomerOrderRequest",
+    "User",
 ]

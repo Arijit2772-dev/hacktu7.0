@@ -16,7 +16,7 @@ from app.database import engine, Base, SessionLocal
 from app.models import (
     Product, Shade, SKU, Region, Warehouse,
     InventoryLevel, InventoryTransfer, Dealer, DealerOrder, SalesHistory,
-    CustomerOrderRequest,
+    CustomerOrderRequest, User,
 )
 from seed.paint_catalog import (
     PRODUCTS, SHADES, SIZE_MULTIPLIERS, hex_to_rgb, get_shade_code, get_sku_code,
@@ -347,6 +347,63 @@ def seed_dealer_orders(db: Session, dealers: list[Dealer], skus: list[SKU]):
     print(f"  Created {orders_created} dealer orders.")
 
 
+def seed_users(db: Session, dealers: list[Dealer]):
+    """Seed default users: 1 admin, 1 user per dealer, 2 customers."""
+    from app.services.auth_service import hash_password
+    print("Seeding users...")
+    users_created = 0
+
+    # Admin user
+    admin = User(
+        email="admin@paintflow.ai",
+        password_hash=hash_password("admin123"),
+        full_name="Admin User",
+        phone="9999999999",
+        role="admin",
+        dealer_id=None,
+        is_active=True,
+    )
+    db.add(admin)
+    users_created += 1
+
+    # Dealer users (one per dealer)
+    for dealer in dealers:
+        dealer_user = User(
+            email=f"dealer{dealer.id}@paintflow.ai",
+            password_hash=hash_password("dealer123"),
+            full_name=dealer.name,
+            phone=f"98{dealer.id:08d}",
+            role="dealer",
+            dealer_id=dealer.id,
+            is_active=True,
+        )
+        db.add(dealer_user)
+        users_created += 1
+
+    # Sample customer users
+    for i, (name, email) in enumerate([
+        ("Rahul Sharma", "rahul@example.com"),
+        ("Priya Patel", "priya@example.com"),
+    ]):
+        customer = User(
+            email=email,
+            password_hash=hash_password("customer123"),
+            full_name=name,
+            phone=f"97{i:08d}",
+            role="customer",
+            dealer_id=None,
+            is_active=True,
+        )
+        db.add(customer)
+        users_created += 1
+
+    db.flush()
+    print(f"  Created {users_created} users.")
+    print(f"  Admin login: admin@paintflow.ai / admin123")
+    print(f"  Dealer login: dealer1@paintflow.ai / dealer123")
+    print(f"  Customer login: rahul@example.com / customer123")
+
+
 def run_seed():
     create_tables()
     db = SessionLocal()
@@ -362,6 +419,7 @@ def run_seed():
         seed_inventory_levels(db, warehouses, skus, shades)
         seed_transfers(db, warehouses, skus, shades)
         seed_dealer_orders(db, dealers, skus)
+        seed_users(db, dealers)
         db.commit()
         print("\nDatabase seeded successfully!")
     except Exception as e:

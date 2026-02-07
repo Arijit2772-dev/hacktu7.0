@@ -9,10 +9,11 @@ import HealthScoreGauge from '../../components/paint/HealthScoreGauge'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { fetchDealerDashboard, fetchDealerAlerts } from '../../api/dealer'
 import { formatCurrency } from '../../utils/formatters'
-
-const DEALER_ID = 1
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function DealerDashboard() {
+  const { user } = useAuth()
+  const DEALER_ID = user?.dealer_id || 1
   const [data, setData] = useState(null)
   const [alerts, setAlerts] = useState(null)
   const [loading, setLoading] = useState(true)

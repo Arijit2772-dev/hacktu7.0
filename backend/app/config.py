@@ -16,3 +16,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # Copilot timeout in seconds
 COPILOT_TIMEOUT = 3.0
+
+# JWT config
+JWT_SECRET = os.getenv("JWT_SECRET", "paintflow-secret-key-change-in-production")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRY_HOURS = 24

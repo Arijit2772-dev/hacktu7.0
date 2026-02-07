@@ -38,8 +38,9 @@ app.add_middleware(
 )
 
 # Import and include routers
-from app.routers import admin, dealer, customer, forecast, copilot, simulate
+from app.routers import admin, dealer, customer, forecast, copilot, simulate, auth
 
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(dealer.router, prefix="/api/dealer", tags=["Dealer"])
 app.include_router(customer.router, prefix="/api/customer", tags=["Customer"])

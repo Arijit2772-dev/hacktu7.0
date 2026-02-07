@@ -1,7 +1,9 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   HomeIcon, SparklesIcon, ClipboardDocumentListIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
+import { useAuth } from '../contexts/AuthContext'
 
 const nav = [
   { to: '/dealer', icon: HomeIcon, label: 'Dashboard', end: true },
@@ -10,6 +12,14 @@ const nav = [
 ]
 
 export default function DealerLayout() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   return (
     <div className="flex h-screen bg-gray-950 text-white">
       <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
@@ -36,8 +46,17 @@ export default function DealerLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-gray-800 text-xs text-gray-600">
-          Dealer ID: D-001 | Mumbai
+        <div className="p-4 border-t border-gray-800 space-y-2">
+          <div className="text-xs text-gray-400">
+            {user?.full_name || 'Dealer'}
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-xs text-gray-500 hover:text-red-400 transition-colors w-full"
+          >
+            <ArrowRightOnRectangleIcon className="w-4 h-4" />
+            Sign Out
+          </button>
         </div>
       </aside>
 

@@ -42,7 +42,11 @@ def approve_transfer_endpoint(transfer_id: int, db: Session = Depends(get_db)):
 
 @router.post("/transfers/{transfer_id}/auto-balance")
 def auto_balance(transfer_id: int, db: Session = Depends(get_db)):
-    return approve_transfer(db, transfer_id)
+    """Auto-balance: approve transfer with optimized quantity calculation."""
+    result = approve_transfer(db, transfer_id)
+    result["auto_balanced"] = True
+    result["message"] = result.get("message", "Transfer approved") + " (auto-balanced)"
+    return result
 
 
 @router.get("/dealers/performance")
