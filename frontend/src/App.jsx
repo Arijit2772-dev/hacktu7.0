@@ -16,6 +16,9 @@ import WarehouseManagement from './pages/admin/WarehouseManagement'
 import DealerDashboard from './pages/dealer/Dashboard'
 import SmartOrders from './pages/dealer/SmartOrders'
 import OrderTracking from './pages/dealer/OrderTracking'
+import PlaceOrder from './pages/dealer/PlaceOrder'
+import OrderDetail from './pages/dealer/OrderDetail'
+import DealerProfile from './pages/dealer/Profile'
 import ShadeCatalog from './pages/customer/ShadeCatalog'
 import ShadeDetail from './pages/customer/ShadeDetail'
 import FindNearMe from './pages/customer/FindNearMe'
@@ -44,6 +47,9 @@ export default function App() {
         <Route index element={<DealerDashboard />} />
         <Route path="smart-orders" element={<SmartOrders />} />
         <Route path="orders" element={<OrderTracking />} />
+        <Route path="orders/:orderId" element={<OrderDetail />} />
+        <Route path="place-order" element={<PlaceOrder />} />
+        <Route path="profile" element={<DealerProfile />} />
       </Route>
       <Route path="/customer" element={
         <ProtectedRoute role="customer"><CustomerLayout /></ProtectedRoute>

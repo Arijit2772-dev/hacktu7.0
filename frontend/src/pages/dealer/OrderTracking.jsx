@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import DataTable from '../../components/common/DataTable'
 import AlertBadge from '../../components/common/AlertBadge'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { fetchOrders } from '../../api/dealer'
 import { formatCurrency, formatDate } from '../../utils/formatters'
 import { useAuth } from '../../contexts/AuthContext'
+import { PlusIcon } from '@heroicons/react/24/outline'
 
 export default function OrderTracking() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const DEALER_ID = user?.dealer_id || 1
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -22,7 +25,11 @@ export default function OrderTracking() {
   if (loading) return <LoadingSpinner />
 
   const columns = [
-    { key: 'id', label: 'Order ID', render: v => <span className="font-mono text-gray-400">#{v}</span> },
+    { key: 'id', label: 'Order ID', render: (v, row) => (
+      <button onClick={() => navigate(`/dealer/orders/${v}`)} className="font-mono text-blue-400 hover:text-blue-300 hover:underline">
+        #{v}
+      </button>
+    ) },
     { key: 'sku_id', label: 'SKU ID' },
     { key: 'quantity', label: 'Qty', render: v => v?.toLocaleString('en-IN') },
     {
@@ -64,6 +71,13 @@ export default function OrderTracking() {
           <h1 className="text-2xl font-bold text-white">Order History</h1>
           <p className="text-sm text-gray-500 mt-1">Last 50 orders</p>
         </div>
+        <button
+          onClick={() => navigate('/dealer/place-order')}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Place Order
+        </button>
         {totalSavings > 0 && (
           <div className="glass rounded-xl px-4 py-3 border border-emerald-500/30">
             <p className="text-xs text-gray-500">Total AI Savings</p>

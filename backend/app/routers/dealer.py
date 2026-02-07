@@ -1,19 +1,16 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from app.database import get_db
 from app.services.dealer_service import (
     get_dealer_dashboard, get_smart_orders, get_dealer_alerts,
 )
+from app.services.order_service import update_order_status, get_order_detail, search_orders
+from app.schemas.dealer import ManualOrderCreate, OrderStatusUpdate
 from app.models import Dealer, DealerOrder
 from datetime import datetime
+from typing import Optional
 
 router = APIRouter()
-
-
-class OrderCreate(BaseModel):
-    sku_id: int
-    quantity: int
 
 
 @router.get("/{dealer_id}/dashboard")
@@ -27,7 +24,7 @@ def smart_orders(dealer_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{dealer_id}/orders")
-def place_order(dealer_id: int, order: OrderCreate, db: Session = Depends(get_db)):
+def place_order(dealer_id: int, order: ManualOrderCreate, db: Session = Depends(get_db)):
     new_order = DealerOrder(
         dealer_id=dealer_id,
         sku_id=order.sku_id,
@@ -71,8 +68,32 @@ def accept_bundle(dealer_id: int, db: Session = Depends(get_db)):
         "success": True,
         "orders_placed": orders_placed,
         "total_savings": round(total_savings, 0),
-        "message": f"Bundle accepted! {orders_placed} orders placed. You saved ₹{total_savings:,.0f}!",
+        "message": f"Bundle accepted! {orders_placed} orders placed. You saved \u20b9{total_savings:,.0f}!",
     }
+
+
+@router.get("/{dealer_id}/orders/search")
+def search_dealer_orders(
+    dealer_id: int,
+    status: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return search_orders(db, dealer_id, status=status, page=page, per_page=per_page)
+
+
+@router.get("/{dealer_id}/orders/{order_id}")
+def order_detail(dealer_id: int, order_id: int, db: Session = Depends(get_db)):
+    return get_order_detail(db, order_id, dealer_id)
+
+
+@router.put("/{dealer_id}/orders/{order_id}/status")
+def change_order_status(
+    dealer_id: int, order_id: int, data: OrderStatusUpdate,
+    db: Session = Depends(get_db),
+):
+    return update_order_status(db, order_id, dealer_id, data.status)
 
 
 @router.get("/{dealer_id}/orders")
@@ -98,3 +119,22 @@ def order_history(dealer_id: int, db: Session = Depends(get_db)):
 @router.get("/{dealer_id}/alerts")
 def dealer_alerts(dealer_id: int, db: Session = Depends(get_db)):
     return get_dealer_alerts(db, dealer_id)
+
+
+@router.get("/{dealer_id}/profile")
+def dealer_profile(dealer_id: int, db: Session = Depends(get_db)):
+    dealer = db.query(Dealer).filter(Dealer.id == dealer_id).first()
+    if not dealer:
+        return {"error": "Dealer not found"}
+    return {
+        "id": dealer.id,
+        "name": dealer.name,
+        "code": dealer.code,
+        "city": dealer.city,
+        "state": dealer.state,
+        "tier": dealer.tier,
+        "credit_limit": dealer.credit_limit,
+        "performance_score": dealer.performance_score,
+        "region_id": dealer.region_id,
+        "warehouse_id": dealer.warehouse_id,
+    }

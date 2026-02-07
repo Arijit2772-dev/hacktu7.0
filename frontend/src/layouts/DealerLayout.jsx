@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   HomeIcon, SparklesIcon, ClipboardDocumentListIcon,
-  ArrowRightOnRectangleIcon,
+  PlusCircleIcon, UserCircleIcon, ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -9,6 +9,8 @@ const nav = [
   { to: '/dealer', icon: HomeIcon, label: 'Dashboard', end: true },
   { to: '/dealer/smart-orders', icon: SparklesIcon, label: 'Smart Orders' },
   { to: '/dealer/orders', icon: ClipboardDocumentListIcon, label: 'Order History' },
+  { to: '/dealer/place-order', icon: PlusCircleIcon, label: 'Place Order' },
+  { to: '/dealer/profile', icon: UserCircleIcon, label: 'My Profile' },
 ]
 
 export default function DealerLayout() {
