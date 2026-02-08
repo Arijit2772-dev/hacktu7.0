@@ -6,16 +6,15 @@ import { formatCurrency } from '../../utils/formatters'
 
 export default function Profile() {
   const { user } = useAuth()
-  const dealerId = user?.dealer_id || 1
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchDealerProfile(dealerId)
+    fetchDealerProfile()
       .then(r => setProfile(r.data))
-      .catch(() => {})
+      .catch(err => console.error('Profile load failed:', err))
       .finally(() => setLoading(false))
-  }, [dealerId])
+  }, [])
 
   if (loading) return <LoadingSpinner />
   if (!profile) return <p className="text-gray-500">Profile not found</p>

@@ -10,6 +10,11 @@ const styles = {
   APPROVED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   IN_TRANSIT: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   COMPLETED: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  PLACED: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  REQUESTED: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  CONTACTED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  FULFILLED: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  CANCELLED: 'bg-red-500/20 text-red-400 border-red-500/30',
 }
 
 export default function AlertBadge({ status }) {

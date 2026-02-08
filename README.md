@@ -1,148 +1,268 @@
-# PaintFlow.ai — AI-Powered Supply Chain Intelligence for Paint Manufacturing
+# PaintFlow.ai
 
-PaintFlow.ai is a full-stack supply chain intelligence platform for paint manufacturing and distribution. It features three role-based portals (Admin, Dealer, Customer) with AI-powered demand forecasting, inventory optimization, smart order recommendations, and a conversational AI copilot.
+PaintFlow.ai is a full-stack, role-based paint supply-chain platform with three portals:
+- Admin (manufacturer control tower)
+- Dealer (procurement + fulfillment workspace)
+- Customer (shade discovery + order request flow)
 
-## Tech Stack
+It includes authentication, dashboards, forecasting, simulations, notifications, ingestion APIs, and CRUD surfaces for operational data.
 
-| Layer      | Technology                                                  |
-| ---------- | ----------------------------------------------------------- |
-| Backend    | Python 3.10+, FastAPI, SQLAlchemy, SQLite                   |
-| Frontend   | React 19, Vite, TailwindCSS 4, Recharts, React Router DOM  |
-| ML         | Prophet (time-series forecasting)                           |
-| AI         | Google Gemini 1.5 Flash (conversational copilot)            |
-| Maps       | react-simple-maps (India warehouse network visualization)   |
+## Access URLs
 
-## Prerequisites
+### Local (Docker)
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- Swagger: `http://localhost:8000/docs`
 
-- **Python 3.10+** (tested on 3.13)
-- **Node.js 18+** and **npm**
-- **Google Gemini API Key** (optional — copilot falls back to heuristics without it)
-
-## Run on Localhost
-
-### 1. Clone the repository
+### Public (quick tunnel)
+Run:
 
 ```bash
-git clone https://github.com/Arijit2772-dev/hacktu7.0.git
-cd hacktu7.0
+./scripts/start_public_url.sh
+./scripts/public_url_status.sh
 ```
 
-### 2. Backend Setup
+The live URL is written to `.runtime/public_url.txt` (Cloudflare quick tunnel, temporary URL).
+
+## Demo Credentials (Seeded)
+
+These are the seeded accounts from `backend/seed/generate_data.py`:
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@paintflow.ai` | `admin123` |
+| Dealer | `dealer1@paintflow.ai` | `dealer123` |
+| Customer | `rahul@example.com` | `customer123` |
+
+Notes:
+- Login is role-safe. A user only enters their own dashboard.
+- Route `/app` auto-redirects to role home (`/admin`, `/dealer`, `/customer`).
+
+## Architecture
+
+```mermaid
+flowchart LR
+  UI["React + Vite Frontend"] --> API["FastAPI Backend"]
+  API --> DB["PostgreSQL / SQLite"]
+  API --> ML["Forecast + Simulation Services"]
+  API --> ING["Ingestion Layer"]
+  API --> OBS["Ops: Health, Metrics, Audit"]
+  UI --> NTFY["Notification UX"]
+  API --> NTFY
+```
+
+### High-level modules
+- `backend/app/routers/*`: auth, admin, dealer, customer, notifications, ingestion, ops
+- `backend/app/services/*`: business logic (analytics, inventory, orders, auth, ingestion, notifications)
+- `backend/app/models/*`: SQLAlchemy models
+- `backend/alembic/*`: migrations
+- `frontend/src/pages/*`: portal pages
+- `frontend/src/layouts/*`: role layouts
+- `frontend/src/contexts/*`: auth/simulation/cart/toast contexts
+- `scripts/*`: deploy, pre-deploy checks, tunnel scripts
+
+## Feature Coverage (Current)
+
+### Admin
+- Dashboard KPIs + map/chart panels
+- Demand forecast
+- Dead stock insights
+- Transfers (approve/auto-balance/complete/reject)
+- Dealer performance
+- Product/Warehouse CRUD
+- Audit logs
+
+### Dealer
+- Dashboard with pipeline/activity/trends
+- Smart orders
+- Order history + detail + status progression
+- Place order
+- Customer requests handling
+- Dealer profile
+
+### Customer
+- Shade catalog and shade detail
+- Near-me dealers
+- Snap & Find
+- Cart + Wishlist
+- Checkout (request model)
+- My orders
+
+### Platform
+- JWT auth (access + refresh)
+- Role-protected routes
+- Notification APIs + bell UI
+- Data ingestion endpoints (JSON/CSV + run tracking)
+- Health/readiness/metrics endpoints
+
+## Run Locally (Recommended: Docker)
+
+### 1) Create `.env`
+Use `.env.production.example` as a base and set real values for your machine.
 
 ```bash
-# Navigate to the backend directory
+cp .env.production.example .env
+```
+
+Minimum required for docker compose:
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `JWT_SECRET`
+- `JWT_REFRESH_SECRET`
+- `CORS_ALLOWED_ORIGINS`
+
+### 2) Build and start
+
+```bash
+docker compose up --build -d
+```
+
+### 3) Seed demo data
+
+```bash
+docker exec -i paintflow-backend python /app/seed/generate_data.py
+```
+
+### 4) Verify
+
+```bash
+curl -s http://localhost:8000/api/health/live
+curl -s http://localhost:8000/api/meta
+```
+
+## Run Without Docker (Dev)
+
+### Backend
+
+```bash
 cd backend
-
-# Create and activate a virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate        # macOS / Linux
-# venv\Scripts\activate         # Windows
-
-# Install Python dependencies
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# (Optional) Set your Gemini API key for the AI copilot
-export GEMINI_API_KEY="your-google-gemini-api-key"
-# On Windows: set GEMINI_API_KEY=your-google-gemini-api-key
-
-# Seed the database and train Prophet forecasting models
-python seed_and_train.py
-
-# Start the backend server
+alembic upgrade head
+python seed/generate_data.py
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The backend API will be available at **http://localhost:8000**
-Interactive API docs at **http://localhost:8000/docs**
-
-### 3. Frontend Setup
-
-Open a **new terminal** window:
+### Frontend
 
 ```bash
-# Navigate to the frontend directory
 cd frontend
-
-# Install Node dependencies
 npm install
-
-# Start the dev server
 npm run dev
 ```
 
-The frontend will be available at **http://localhost:5173**
+## Public Deployment
 
-> Vite automatically proxies `/api` requests to the backend at `http://localhost:8000`.
-
-### 4. Open the App
-
-Visit **http://localhost:5173** in your browser. From the landing page, select a portal:
-
-- **Admin Portal** — Supply chain dashboard, inventory management, demand forecasting, dealer analytics
-- **Dealer Portal** — Smart order recommendations, order tracking, health score
-- **Customer Portal** — Shade catalog, nearby dealer finder, snap & find color matcher
-
-## Project Structure
-
-```
-hacktu7.0/
-├── backend/
-│   ├── app/
-│   │   ├── main.py                # FastAPI entry point
-│   │   ├── config.py              # App configuration
-│   │   ├── database.py            # SQLAlchemy setup
-│   │   ├── models/                # Database models (Product, Shade, SKU, Warehouse, Dealer, etc.)
-│   │   ├── routers/               # API endpoints (admin, dealer, customer, forecast, copilot, simulate)
-│   │   ├── services/              # Business logic (analytics, forecast, inventory, dealer, copilot)
-│   │   ├── ml/                    # Prophet model training & saved models
-│   │   └── simulations/           # Supply chain scenario engine (truck strike, heatwave, monsoon)
-│   ├── seed/                      # Database seeding scripts
-│   ├── seed_and_train.py          # One-command setup: seed DB + train ML models
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx                # React Router configuration
-│   │   ├── pages/                 # Admin, Dealer, Customer portal pages
-│   │   ├── components/            # Reusable UI components (charts, maps, copilot, paint swatches)
-│   │   ├── contexts/              # React context (Simulation scenarios)
-│   │   ├── api/                   # Axios API client layer
-│   │   └── layouts/               # Portal layouts (Admin, Dealer, Customer)
-│   ├── vite.config.js
-│   └── package.json
-│
-└── README.md
-```
-
-## Key Features
-
-- **Demand Forecasting** — Prophet-based time-series prediction with Diwali surge detection
-- **Inventory Optimization** — Days-of-cover analysis, stockout alerts, dead stock identification
-- **Smart Transfers** — AI-recommended warehouse-to-warehouse inventory rebalancing
-- **Smart Orders** — ML-driven order recommendations for dealers with cost savings calculation
-- **AI Copilot** — Gemini-powered conversational assistant with generative UI widgets
-- **Scenario Simulation** — What-if analysis for truck strikes, heatwaves, and early monsoons
-- **Snap & Find** — Color matching from photos or hex codes to find the closest paint shade
-- **India Warehouse Map** — Geographic visualization of warehouse network with transfer arcs
-
-## Environment Variables
-
-| Variable        | Required | Description                          |
-| --------------- | -------- | ------------------------------------ |
-| `GEMINI_API_KEY` | No       | Google Gemini API key for AI copilot. Falls back to heuristic responses if not set. |
-
-## API Documentation
-
-Once the backend is running, visit:
-
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-
-## Build for Production
+### A) Free temporary public URL (best for demos)
 
 ```bash
-# Build the frontend
-cd frontend
-npm run build
-# Output will be in frontend/dist/
+./scripts/start_public_url.sh
+./scripts/public_url_status.sh
 ```
+
+Stop:
+
+```bash
+./scripts/stop_public_url.sh
+```
+
+### B) Real domain deployment (`https://your-domain`)
+
+1. Configure DNS for your domain (e.g. `paintflow.ai`) to your server IP.
+2. Fill `.env` with production values, including:
+   - `DOMAIN`
+   - `ACME_EMAIL`
+   - `CORS_ALLOWED_ORIGINS` including `https://<DOMAIN>`
+3. Run predeploy gate:
+
+```bash
+./scripts/predeploy_gate.sh ./.env
+```
+
+4. Deploy:
+
+```bash
+./scripts/deploy_public.sh ./.env
+```
+
+Production stack uses `docker-compose.prod.yml` + Caddy TLS (`deploy/Caddyfile`).
+
+## Data Ingestion Layer
+
+Admin-authenticated ingestion APIs are available under `/api/ingest`:
+- Templates: `GET /api/ingest/templates`
+- Trigger run: `POST /api/ingest/run-now`
+- Upload JSON/CSV for:
+  - `sales_history`
+  - `inventory_levels`
+  - `dealer_orders`
+- Run logs:
+  - `GET /api/ingest/runs`
+  - `GET /api/ingest/runs/{run_id}`
+
+Scheduler reads inbox files from:
+- `backend/app/ingestion/inbox`
+- archives to `backend/app/ingestion/archive`
+- errors to `backend/app/ingestion/error`
+
+## Health / Observability
+
+- Liveness: `GET /api/health/live`
+- Readiness: `GET /api/health/ready`
+- Metrics JSON: `GET /api/metrics`
+- Metrics Prometheus: `GET /api/metrics?format=prometheus`
+
+Responses include request tracing headers:
+- `x-request-id`
+- `x-response-time-ms`
+
+## CI
+
+GitHub Actions workflow: `.github/workflows/ci.yml`
+- Backend tests (`pytest`)
+- Frontend production build (`npm run build`)
+
+## Pre-Deploy Checklist
+
+```bash
+./scripts/predeploy_gate.sh ./.env
+cd backend && python -m pytest -q
+cd frontend && npm run build
+```
+
+Also confirm:
+- Admin login works
+- Dealer login works
+- Customer login works
+- Admin dashboard is non-zero (seeded)
+
+## Troubleshooting
+
+### Login fails
+1. Ensure backend is healthy: `curl http://localhost:8000/api/health/live`
+2. Re-seed users/data:
+
+```bash
+docker exec -i paintflow-backend python /app/seed/generate_data.py
+```
+
+3. Retry seeded credentials from this README.
+
+### Dashboards show zeros
+Most likely database is empty. Re-run seed command above.
+
+### Public link not opening
+If using quick tunnel, URL may have changed. Run:
+
+```bash
+./scripts/public_url_status.sh
+```
+
+## Security Notes
+
+- Do not commit real production `.env` secrets.
+- Change demo credentials before production launch.
+- Use long random JWT secrets (32+ chars).
+- Restrict CORS to exact production domains.

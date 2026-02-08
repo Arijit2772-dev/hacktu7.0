@@ -20,7 +20,7 @@ export default function DealerPerformance() {
     setLoading(true)
     fetchDealerPerformance(regionFilter || null)
       .then(r => setDealers(r.data))
-      .catch(() => {})
+      .catch(err => console.error('Dealers load failed:', err))
       .finally(() => setLoading(false))
   }, [regionFilter])
 

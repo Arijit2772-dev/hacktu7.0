@@ -12,7 +12,7 @@ export default function DeadStock() {
   useEffect(() => {
     fetchDeadStock()
       .then(r => setData(r.data))
-      .catch(() => {})
+      .catch(err => console.error('Dead stock load failed:', err))
       .finally(() => setLoading(false))
   }, [])
 

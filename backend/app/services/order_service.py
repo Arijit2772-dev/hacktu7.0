@@ -31,8 +31,12 @@ def update_order_status(db: Session, order_id: int, dealer_id: int, new_status: 
             detail=f"Cannot transition from '{current}' to '{new_status}'. Allowed: {allowed}"
         )
 
-    order.status = new_status
-    db.commit()
+    try:
+        order.status = new_status
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update order status") from exc
 
     return {
         "success": True,

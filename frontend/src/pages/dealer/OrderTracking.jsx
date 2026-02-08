@@ -11,14 +11,13 @@ import { PlusIcon } from '@heroicons/react/24/outline'
 export default function OrderTracking() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const DEALER_ID = user?.dealer_id || 1
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchOrders(DEALER_ID)
+    fetchOrders()
       .then(r => setOrders(r.data))
-      .catch(() => {})
+      .catch(err => console.error('Orders load failed:', err))
       .finally(() => setLoading(false))
   }, [])
 

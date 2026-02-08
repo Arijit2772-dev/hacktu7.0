@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CameraIcon } from '@heroicons/react/24/solid'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { snapAndFind, fetchShadeAvailability } from '../../api/customer'
+import { getBrowserLocation, readUserLocation } from '../../utils/location'
 
 const scanSteps = [
   'Scanning wall surface...',
@@ -17,6 +18,7 @@ export default function SnapAndFind() {
   const [loading, setLoading] = useState(false)
   const [scanStep, setScanStep] = useState(0)
   const [imagePreview, setImagePreview] = useState(null)
+  const [locationMessage, setLocationMessage] = useState('')
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0]
@@ -58,8 +60,19 @@ export default function SnapAndFind() {
       setResult(res.data)
 
       if (res.data.shade_id) {
-        const avail = await fetchShadeAvailability(res.data.shade_id, 19.07, 72.87)
-        setAvailability(avail.data)
+        let coords = readUserLocation()
+        if (!coords) {
+          try {
+            coords = await getBrowserLocation()
+          } catch {
+            setLocationMessage('Enable location access to show nearby dealers.')
+          }
+        }
+        if (coords?.lat != null && coords?.lng != null) {
+          const avail = await fetchShadeAvailability(res.data.shade_id, coords.lat, coords.lng)
+          setAvailability(avail.data || [])
+          setLocationMessage('')
+        }
       }
     } catch {
       setResult({ error: 'Failed to find match' })
@@ -202,6 +215,9 @@ export default function SnapAndFind() {
               </div>
             </div>
           )}
+          {availability.length === 0 && locationMessage ? (
+            <p className="mt-4 text-sm text-orange-600">{locationMessage}</p>
+          ) : null}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from app.simulations.scenarios import get_scenario_list, get_scenario_data
 
 router = APIRouter()
@@ -13,5 +13,5 @@ def list_scenarios():
 def scenario_data(scenario_id: str):
     data = get_scenario_data(scenario_id.upper())
     if not data:
-        return {"error": "Scenario not found"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scenario not found")
     return data

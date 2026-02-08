@@ -6,7 +6,8 @@ Returns structured JSON with text + optional ui_widget for Generative UI.
 import re
 import json
 import asyncio
-from app.config import GEMINI_API_KEY, COPILOT_TIMEOUT
+from datetime import date
+from app.config import GEMINI_API_KEY, COPILOT_TIMEOUT, get_simulation_date, get_simulation_date_str
 
 
 def clean_and_parse_json(raw_response: str) -> dict:
@@ -21,6 +22,17 @@ def clean_and_parse_json(raw_response: str) -> dict:
             except (json.JSONDecodeError, Exception):
                 pass
     return {"text": raw_response, "ui_widget": None}
+
+
+def _safe_sim_date() -> date:
+    return get_simulation_date()
+
+
+def _next_diwali_reference_date(sim_date: date) -> date:
+    this_year = date(sim_date.year, 10, 25)
+    if sim_date <= this_year:
+        return this_year
+    return date(sim_date.year + 1, 10, 25)
 
 
 async def get_chat_response(message: str, context: dict = None) -> dict:
@@ -54,7 +66,7 @@ async def _gemini_response(message: str, context: dict, scenario_id: str) -> dic
 
         system_prompt = f"""You are PaintFlow Supply Chain AI assistant.
 Current Simulation Mode: {scenario_id}
-Current System Date: 2025-10-10
+Current System Date: {get_simulation_date_str()}
 
 Current Inventory Context:
 {inventory_context}
@@ -77,6 +89,7 @@ User question: {message}"""
 def _heuristic_response(message: str, scenario_id: str) -> dict:
     """Heuristic keyword-matching fallback for when Gemini is unavailable."""
     msg = message.lower()
+    sim_date = _safe_sim_date()
 
     # Handle scenario context
     scenario_prefix = ""
@@ -128,8 +141,13 @@ def _heuristic_response(message: str, scenario_id: str) -> dict:
 
     # Diwali queries
     if "diwali" in msg or "festival" in msg:
+        days_to_diwali = (_next_diwali_reference_date(sim_date) - sim_date).days
+        if days_to_diwali <= 30:
+            timing_text = f"Diwali is {days_to_diwali} days away."
+        else:
+            timing_text = f"Diwali is about {days_to_diwali} days away."
         return {
-            "text": f"{scenario_prefix}Diwali is 15 days away. Based on 2 years of historical data, "
+            "text": f"{scenario_prefix}{timing_text} Based on 2 years of historical data, "
                     f"I predict a 60% demand surge across all paint categories. Premium products like "
                     f"Royale Luxury Emulsion will see the highest spike. I recommend pre-positioning "
                     f"stock in North and West warehouses.",
@@ -139,7 +157,7 @@ def _heuristic_response(message: str, scenario_id: str) -> dict:
     # Monsoon / waterproofing
     if "monsoon" in msg or "rain" in msg or "waterproof" in msg:
         return {
-            "text": f"{scenario_prefix}The Great Mumbai Rain event of Oct 2025 caused a 3x spike in "
+            "text": f"{scenario_prefix}The Great Mumbai Rain event caused a 3x spike in "
                     f"waterproofing demand. Our Prophet model detected this pattern and can predict "
                     f"similar events 3 days in advance. Current waterproofing stock in West region "
                     f"is adequate for normal demand but insufficient for another rain event.",
@@ -147,9 +165,15 @@ def _heuristic_response(message: str, scenario_id: str) -> dict:
         }
 
     # Default
+    days_to_diwali = (_next_diwali_reference_date(sim_date) - sim_date).days
+    festival_hint = (
+        "Diwali demand surge approaching."
+        if days_to_diwali <= 45
+        else "Demand currently stable outside festival peak."
+    )
     return {
         "text": f"{scenario_prefix}I'm analyzing the current supply chain state. "
-                f"There are 8 stockout risks, 3 recommended transfers, and Diwali demand surge approaching. "
+                f"There are 8 stockout risks, 3 recommended transfers, and {festival_hint} "
                 f"Would you like me to focus on a specific area? Try asking about 'Bridal Red in Pune', "
                 f"'stockouts', 'Diwali preparation', or 'monsoon impact'.",
         "ui_widget": None,

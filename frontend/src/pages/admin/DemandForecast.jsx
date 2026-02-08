@@ -17,7 +17,7 @@ export default function DemandForecast() {
       if (r.data.length > 0 && !selectedSku) {
         setSelectedSku(r.data[0].sku_id)
       }
-    }).catch(() => {})
+    }).catch(err => console.error('Forecast load failed:', err))
   }, [])
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function DemandForecast() {
     setLoading(true)
     fetchForecast(selectedSku, selectedRegion)
       .then(r => setData(r.data))
-      .catch(() => {})
+      .catch(err => console.error('Shade forecast failed:', err))
       .finally(() => setLoading(false))
   }, [selectedSku, selectedRegion])
 

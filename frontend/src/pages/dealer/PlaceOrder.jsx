@@ -10,7 +10,6 @@ export default function PlaceOrder() {
   const { user } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
-  const dealerId = user?.dealer_id || 1
   const [form, setForm] = useState({ sku_id: '', quantity: '' })
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(null)
@@ -19,7 +18,7 @@ export default function PlaceOrder() {
     e.preventDefault()
     setSaving(true)
     try {
-      const res = await placeOrder(dealerId, {
+      const res = await placeOrder({
         sku_id: parseInt(form.sku_id),
         quantity: parseInt(form.quantity),
       })

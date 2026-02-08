@@ -40,3 +40,13 @@ export const createWarehouse = (data) => api.post('/admin/warehouses', data)
 
 // Inventory
 export const adjustInventory = (data) => api.post('/admin/inventory/adjust', data)
+
+// Analytics drill-down
+export const fetchRevenueBreakdown = (days = 30) =>
+  api.get('/admin/analytics/revenue-breakdown', { params: { days } })
+export const fetchStockoutDetails = () => api.get('/admin/analytics/stockout-details')
+export const fetchDealerDistribution = () => api.get('/admin/analytics/dealer-distribution')
+export const fetchWarehouseUtilization = () => api.get('/admin/analytics/warehouse-utilization')
+
+// Audit logs
+export const fetchAuditLogs = (params) => api.get('/admin/audit/logs', { params })

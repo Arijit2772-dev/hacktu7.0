@@ -1,14 +1,34 @@
 import api from './client'
 
-export const fetchDealerDashboard = (id) => api.get(`/dealer/${id}/dashboard`)
-export const fetchSmartOrders = (id) => api.get(`/dealer/${id}/smart-orders`)
-export const placeOrder = (id, data) => api.post(`/dealer/${id}/orders`, data)
-export const acceptBundle = (id) => api.post(`/dealer/${id}/orders/bundle`)
-export const fetchOrders = (id) => api.get(`/dealer/${id}/orders`)
-export const fetchDealerAlerts = (id) => api.get(`/dealer/${id}/alerts`)
-export const fetchOrderDetail = (dealerId, orderId) => api.get(`/dealer/${dealerId}/orders/${orderId}`)
-export const updateOrderStatus = (dealerId, orderId, status) =>
-  api.put(`/dealer/${dealerId}/orders/${orderId}/status`, { status })
-export const searchOrders = (dealerId, params) =>
-  api.get(`/dealer/${dealerId}/orders/search`, { params })
-export const fetchDealerProfile = (id) => api.get(`/dealer/${id}/profile`)
+// All dealer endpoints now use /dealer/me/ (JWT-based, no dealer_id in URL)
+export const fetchDealerDashboard = () => api.get('/dealer/me/dashboard')
+export const fetchDealerDashboardActivity = (params) =>
+  api.get('/dealer/me/dashboard/activity', { params })
+export const fetchDealerDashboardPipeline = () => api.get('/dealer/me/dashboard/pipeline')
+export const fetchDealerDashboardTrends = (params) =>
+  api.get('/dealer/me/dashboard/trends', { params })
+export const fetchDealerTopSkus = (params) =>
+  api.get('/dealer/me/inventory/top-skus', { params })
+export const fetchDealerRevenueTrend = (params) =>
+  api.get('/dealer/me/analytics/revenue-trend', { params })
+export const fetchDealerAnalyticsTopSkus = (params) =>
+  api.get('/dealer/me/analytics/top-skus', { params })
+export const fetchDealerAnalyticsPipeline = () =>
+  api.get('/dealer/me/analytics/order-pipeline')
+export const fetchSmartOrders = () => api.get('/dealer/me/smart-orders')
+export const placeOrder = (data) => api.post('/dealer/me/orders', data)
+export const acceptBundle = () => api.post('/dealer/me/orders/bundle')
+export const fetchOrders = () => api.get('/dealer/me/orders')
+export const fetchDealerAlerts = () => api.get('/dealer/me/alerts')
+export const fetchOrderDetail = (orderId) => api.get(`/dealer/me/orders/${orderId}`)
+export const updateOrderStatus = (orderId, status) =>
+  api.put(`/dealer/me/orders/${orderId}/status`, { status })
+export const searchOrders = (params) =>
+  api.get('/dealer/me/orders/search', { params })
+export const fetchDealerProfile = () => api.get('/dealer/me/profile')
+export const fetchCustomerRequests = (params) =>
+  api.get('/dealer/me/customer-requests', { params })
+export const updateCustomerRequestStatus = (orderId, status) =>
+  api.put(`/dealer/me/customer-requests/${orderId}/status`, { status })
+export const rejectCustomerRequest = (orderId) =>
+  api.post(`/dealer/me/customer-requests/${orderId}/reject`)

@@ -9,12 +9,12 @@ export function SimulationProvider({ children }) {
   const [scenarioList, setScenarioList] = useState([])
 
   useEffect(() => {
-    api.get('/simulate/scenarios').then(r => setScenarioList(r.data)).catch(() => {})
+    api.get('/simulate/scenarios').then(r => setScenarioList(r.data)).catch(err => console.error('Scenarios load failed:', err))
     // Preload all scenario data
     ;['TRUCK_STRIKE', 'HEATWAVE', 'EARLY_MONSOON'].forEach(id => {
       api.get(`/simulate/scenario/${id}/data`).then(r => {
         setScenarioData(prev => ({ ...prev, [id]: r.data }))
-      }).catch(() => {})
+      }).catch(err => console.error('Scenario apply failed:', err))
     })
   }, [])
 

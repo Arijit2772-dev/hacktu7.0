@@ -3,21 +3,50 @@ import { useParams, Link } from 'react-router-dom'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { fetchShadeDetail, fetchShadeAvailability } from '../../api/customer'
 import { FireIcon, MapPinIcon } from '@heroicons/react/24/solid'
+import { getBrowserLocation, readUserLocation } from '../../utils/location'
 
 export default function ShadeDetail() {
   const { shadeId } = useParams()
   const [shade, setShade] = useState(null)
   const [availability, setAvailability] = useState([])
   const [loading, setLoading] = useState(true)
+  const [locationMessage, setLocationMessage] = useState('')
 
   useEffect(() => {
-    Promise.all([
-      fetchShadeDetail(shadeId),
-      fetchShadeAvailability(shadeId, 19.07, 72.87),
-    ]).then(([s, a]) => {
-      setShade(s.data)
-      setAvailability(a.data)
-    }).catch(() => {}).finally(() => setLoading(false))
+    let cancelled = false
+    const loadShade = async () => {
+      setLoading(true)
+      try {
+        const detailRes = await fetchShadeDetail(shadeId)
+        if (cancelled) return
+        setShade(detailRes.data)
+
+        let coords = readUserLocation()
+        if (!coords) {
+          try {
+            coords = await getBrowserLocation()
+          } catch {
+            setLocationMessage('Enable location access to view nearby dealers.')
+          }
+        }
+
+        if (coords?.lat != null && coords?.lng != null) {
+          const availabilityRes = await fetchShadeAvailability(shadeId, coords.lat, coords.lng)
+          if (cancelled) return
+          setAvailability(availabilityRes.data || [])
+          setLocationMessage('')
+        } else {
+          setAvailability([])
+        }
+      } catch (err) {
+        console.error('Shade detail load failed:', err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    loadShade()
+    return () => { cancelled = true }
   }, [shadeId])
 
   if (loading) return <LoadingSpinner />
@@ -89,7 +118,7 @@ export default function ShadeDetail() {
               Nearby Dealers
             </h3>
             {availability.length === 0 ? (
-              <p className="text-sm text-gray-400">No nearby dealers found</p>
+              <p className="text-sm text-gray-400">{locationMessage || 'No nearby dealers found'}</p>
             ) : (
               <div className="space-y-2">
                 {availability.map(d => (

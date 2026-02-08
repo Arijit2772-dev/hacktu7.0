@@ -4,7 +4,7 @@ Sales history generator: 2 years of daily sales data with:
 - Monsoon dip (-30% exterior, +40% waterproofing)
 - Summer peak (+20% interior)
 - Wedding season (+25% North)
-- "The Great Mumbai Rain of 2025" narrative spike
+- "The Great Mumbai Rain" narrative spike
 - "Bridal Red" hero product story
 - YoY growth (8%, premium 15%)
 - Day-of-week effects
@@ -36,9 +36,9 @@ def is_holi_period(d: date) -> bool:
     return d.month == 3 and 10 <= d.day <= 20
 
 
-def is_mumbai_rain_event(d: date) -> bool:
-    """The Great Mumbai Rain of 2025: Oct 8-15"""
-    return d.year == 2025 and d.month == 10 and 8 <= d.day <= 15
+def is_mumbai_rain_event(d: date, event_year: int) -> bool:
+    """The Great Mumbai Rain narrative window: Oct 8-15 in event year."""
+    return d.year == event_year and d.month == 10 and 8 <= d.day <= 15
 
 
 def generate_daily_sales(
@@ -51,11 +51,13 @@ def generate_daily_sales(
     start_date: date,
     end_date: date,
     rng: np.random.Generator,
+    event_year: int | None = None,
 ) -> list[dict]:
     """Generate daily sales records for one SKU-region combination."""
     records = []
     current = start_date
     days_from_start = 0
+    active_event_year = event_year if event_year is not None else end_date.year
 
     while current <= end_date:
         # Base demand
@@ -102,8 +104,8 @@ def generate_daily_sales(
 
         # --- Narrative Events ---
 
-        # The Great Mumbai Rain of 2025
-        if is_mumbai_rain_event(current) and product_category == "Waterproofing" and region_id in (4, 5):  # West
+        # The Great Mumbai Rain narrative event
+        if is_mumbai_rain_event(current, active_event_year) and product_category == "Waterproofing" and region_id in (4, 5):  # West
             demand *= 3.0  # Massive spike!
 
         # Trending shade boost (last 6 months of data)

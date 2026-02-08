@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { login } from '../../api/auth'
@@ -8,8 +8,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { loginUser } = useAuth()
+  const { loginUser, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (authLoading || !user) return
+    const redirects = { admin: '/admin', dealer: '/dealer', customer: '/customer' }
+    navigate(redirects[user.role] || '/customer', { replace: true })
+  }, [user, authLoading, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -85,26 +91,6 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {/* Demo credentials */}
-          <div className="border-t border-gray-800 pt-4 mt-4">
-            <p className="text-xs text-gray-600 mb-2 text-center">Demo Accounts</p>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: 'Admin', email: 'admin@paintflow.ai', pass: 'admin123' },
-                { label: 'Dealer', email: 'dealer1@paintflow.ai', pass: 'dealer123' },
-                { label: 'Customer', email: 'rahul@example.com', pass: 'customer123' },
-              ].map(demo => (
-                <button
-                  key={demo.label}
-                  type="button"
-                  onClick={() => { setEmail(demo.email); setPassword(demo.pass) }}
-                  className="px-2 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-400 hover:text-white transition-colors"
-                >
-                  {demo.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </form>
       </div>
     </div>

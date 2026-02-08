@@ -4,6 +4,7 @@ from app.database import get_db
 from app.services.forecast_service import get_forecast
 from app.models import SKU, Shade, SalesHistory, Region
 from sqlalchemy import func
+from app.config import get_simulation_date
 
 router = APIRouter()
 
@@ -15,12 +16,11 @@ def get_sku_forecast(
 ):
     """Get forecast for a specific SKU with event annotations."""
     forecast_data = get_forecast(sku_id, region_id, horizon)
+    sim_date = get_simulation_date()
 
     # Add event annotations
     annotations = [
-        {"date": "2025-10-25", "label": "Diwali Start", "color": "#FF6B35"},
-        {"date": "2025-11-10", "label": "Diwali End", "color": "#FF6B35"},
-        {"date": "2025-10-10", "label": "Today", "color": "#3B82F6"},
+        {"date": sim_date.isoformat(), "label": "Today", "color": "#3B82F6"},
     ]
 
     # Get actual sales data for this SKU-region

@@ -16,7 +16,7 @@ export default function Transfers() {
         setTransfers(t.data)
         setWarehouses(w.data)
       })
-      .catch(() => {})
+      .catch(err => console.error('Transfers load failed:', err))
       .finally(() => setLoading(false))
   }, [])
 

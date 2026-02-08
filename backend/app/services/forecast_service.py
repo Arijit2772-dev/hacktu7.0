@@ -8,7 +8,7 @@ import pickle
 from functools import lru_cache
 from pathlib import Path
 from datetime import date, timedelta
-from app.config import MODEL_DIR, APP_SIMULATION_DATE
+from app.config import MODEL_DIR, get_simulation_date
 
 # Global model cache
 _models: dict = {}
@@ -48,7 +48,7 @@ def get_forecast(sku_id: int, region_id: int, horizon: int = 30) -> dict:
         future = model.make_future_dataframe(periods=horizon)
         forecast = model.predict(future)
 
-        sim_date = date.fromisoformat(APP_SIMULATION_DATE)
+        sim_date = get_simulation_date()
 
         historical = []
         predicted = []
@@ -77,7 +77,7 @@ def _generate_fallback_forecast(sku_id: int, region_id: int, horizon: int) -> di
     """Generate a reasonable-looking fallback forecast without Prophet."""
     import numpy as np
 
-    sim_date = date.fromisoformat(APP_SIMULATION_DATE)
+    sim_date = get_simulation_date()
     rng = np.random.default_rng(sku_id * 100 + region_id)
 
     base = rng.uniform(20, 60)

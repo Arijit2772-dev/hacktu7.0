@@ -8,15 +8,14 @@ import { useAuth } from '../../contexts/AuthContext'
 
 export default function SmartOrders() {
   const { user } = useAuth()
-  const DEALER_ID = user?.dealer_id || 1
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [bundleResult, setBundleResult] = useState(null)
 
   useEffect(() => {
-    fetchSmartOrders(DEALER_ID)
+    fetchSmartOrders()
       .then(r => setOrders(r.data))
-      .catch(() => {})
+      .catch(err => console.error('Smart orders load failed:', err))
       .finally(() => setLoading(false))
   }, [])
 
@@ -24,7 +23,7 @@ export default function SmartOrders() {
 
   const handleAcceptBundle = async () => {
     try {
-      const res = await acceptBundle(DEALER_ID)
+      const res = await acceptBundle()
       setBundleResult(res.data)
       confetti({
         particleCount: 150,
@@ -32,7 +31,8 @@ export default function SmartOrders() {
         origin: { y: 0.6 },
         colors: ['#10b981', '#3b82f6', '#f59e0b'],
       })
-    } catch {
+    } catch (err) {
+      console.error('Failed to accept smart-order bundle:', err)
       setBundleResult({ message: 'Failed to accept bundle' })
     }
   }

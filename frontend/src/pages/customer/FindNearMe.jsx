@@ -2,20 +2,56 @@ import { useState, useEffect } from 'react'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { fetchNearbyDealers } from '../../api/customer'
 import { MapPinIcon } from '@heroicons/react/24/solid'
+import { getBrowserLocation, readUserLocation, saveUserLocation } from '../../utils/location'
 
 export default function FindNearMe() {
+  const savedLocation = readUserLocation()
   const [dealers, setDealers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [lat, setLat] = useState(19.07)
-  const [lng, setLng] = useState(72.87)
+  const [loading, setLoading] = useState(Boolean(savedLocation))
+  const [lat, setLat] = useState(savedLocation?.lat ?? null)
+  const [lng, setLng] = useState(savedLocation?.lng ?? null)
+  const [locationError, setLocationError] = useState('')
 
   useEffect(() => {
+    if (lat == null || lng == null) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     fetchNearbyDealers(lat, lng)
       .then(r => setDealers(r.data))
-      .catch(() => {})
+      .catch(err => console.error('Nearby dealers load failed:', err))
       .finally(() => setLoading(false))
   }, [lat, lng])
+
+  useEffect(() => {
+    if (lat != null && lng != null) return
+    getBrowserLocation()
+      .then(coords => {
+        setLocationError('')
+        setLat(coords.lat)
+        setLng(coords.lng)
+      })
+      .catch((err) => {
+        console.error('Initial location lookup failed:', err)
+        setLocationError('Location access denied. Use "Use My Location" or pick a city.')
+      })
+  }, [lat, lng])
+
+  const handleUseMyLocation = () => {
+    setLoading(true)
+    getBrowserLocation()
+      .then(coords => {
+        setLocationError('')
+        setLat(coords.lat)
+        setLng(coords.lng)
+      })
+      .catch((err) => {
+        console.error('Manual location lookup failed:', err)
+        setLocationError('Unable to fetch your location. Check browser permissions.')
+      })
+      .finally(() => setLoading(false))
+  }
 
   const cities = [
     { name: 'Mumbai', lat: 19.07, lng: 72.87 },
@@ -35,10 +71,16 @@ export default function FindNearMe() {
 
       {/* Quick city selector */}
       <div className="flex flex-wrap gap-2">
+        <button
+          onClick={handleUseMyLocation}
+          className="px-4 py-2 rounded-lg text-sm bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
+        >
+          Use My Location
+        </button>
         {cities.map(c => (
           <button
             key={c.name}
-            onClick={() => { setLat(c.lat); setLng(c.lng) }}
+            onClick={() => { setLat(c.lat); setLng(c.lng); saveUserLocation(c.lat, c.lng); setLocationError('') }}
             className={`px-4 py-2 rounded-lg text-sm transition-colors ${
               lat === c.lat && lng === c.lng
                 ? 'bg-orange-500 text-white'
@@ -49,6 +91,10 @@ export default function FindNearMe() {
           </button>
         ))}
       </div>
+
+      {locationError ? (
+        <p className="text-sm text-orange-600">{locationError}</p>
+      ) : null}
 
       {loading ? (
         <LoadingSpinner text="Finding dealers..." />

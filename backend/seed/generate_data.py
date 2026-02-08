@@ -12,11 +12,12 @@ import numpy as np
 from datetime import date, datetime, timedelta
 from sqlalchemy.orm import Session
 
+from app.config import get_simulation_date
 from app.database import engine, Base, SessionLocal
 from app.models import (
     Product, Shade, SKU, Region, Warehouse,
     InventoryLevel, InventoryTransfer, Dealer, DealerOrder, SalesHistory,
-    CustomerOrderRequest, User,
+    CustomerOrderRequest, CustomerOrder, CustomerOrderItem, User,
 )
 from seed.paint_catalog import (
     PRODUCTS, SHADES, SIZE_MULTIPLIERS, hex_to_rgb, get_shade_code, get_sku_code,
@@ -26,6 +27,13 @@ from seed.time_series import generate_daily_sales, TOP_SKU_REGION_CONFIGS
 
 
 rng = np.random.default_rng(42)
+
+
+def _resolve_sim_date() -> date:
+    return get_simulation_date()
+
+
+SIM_DATE = _resolve_sim_date()
 
 
 def create_tables():
@@ -152,8 +160,8 @@ def seed_dealers(db: Session, regions: list[Region], warehouses: list[Warehouse]
 
 def seed_sales_history(db: Session, shades: list[Shade], skus: list[SKU], products: list[Product]):
     print("Seeding sales history (2 years)...")
-    start_date = date(2023, 10, 1)
-    end_date = date(2025, 10, 10)  # Up to APP_SIMULATION_DATE
+    end_date = SIM_DATE
+    start_date = end_date - timedelta(days=730)
 
     total_records = 0
     shade_lookup = {s.shade_name: s for s in shades}
@@ -186,6 +194,7 @@ def seed_sales_history(db: Session, shades: list[Shade], skus: list[SKU], produc
                 start_date=start_date,
                 end_date=end_date,
                 rng=rng,
+                event_year=end_date.year,
             )
 
             for rec in records:
@@ -251,7 +260,7 @@ def seed_inventory_levels(db: Session, warehouses: list[Warehouse], skus: list[S
                 reorder_point=int(avg_daily * 14),
                 max_capacity=int(avg_daily * 120),
                 days_of_cover=days_of_cover,
-                last_updated=datetime(2025, 10, 10),
+                last_updated=datetime.combine(SIM_DATE, datetime.min.time()),
             )
             db.add(level)
             levels_created += 1
@@ -303,7 +312,7 @@ def seed_transfers(db: Session, warehouses: list[Warehouse], skus: list[SKU], sh
             quantity=t["qty"],
             status="PENDING",
             reason=t["reason"],
-            recommended_at=datetime(2025, 10, 10, 9, 0, 0),
+            recommended_at=datetime.combine(SIM_DATE, datetime.min.time()).replace(hour=9),
         )
         db.add(transfer)
 
@@ -314,8 +323,8 @@ def seed_transfers(db: Session, warehouses: list[Warehouse], skus: list[SKU], sh
 def seed_dealer_orders(db: Session, dealers: list[Dealer], skus: list[SKU]):
     print("Seeding dealer orders (last 6 months)...")
     orders_created = 0
-    start = date(2025, 4, 1)
-    end = date(2025, 10, 10)
+    end = SIM_DATE
+    start = end - timedelta(days=190)
 
     top_skus = skus[:60]  # First 60 SKUs
 
@@ -323,7 +332,8 @@ def seed_dealer_orders(db: Session, dealers: list[Dealer], skus: list[SKU]):
         num_orders = int(rng.uniform(10, 40))
         for _ in range(num_orders):
             sku = rng.choice(top_skus)
-            order_date = start + timedelta(days=int(rng.uniform(0, (end - start).days)))
+            span_days = max((end - start).days, 1)
+            order_date = start + timedelta(days=int(rng.uniform(0, span_days)))
             is_ai = bool(rng.random() > 0.6)
             savings = round(float(rng.uniform(500, 5000)), 0) if is_ai else 0.0
 
@@ -342,6 +352,35 @@ def seed_dealer_orders(db: Session, dealers: list[Dealer], skus: list[SKU]):
             )
             db.add(order)
             orders_created += 1
+
+        # Ensure each dealer has visible activity in current month.
+        delivered_sku = rng.choice(top_skus)
+        delivered_order = DealerOrder(
+            dealer_id=dealer.id,
+            sku_id=delivered_sku.id,
+            quantity=int(rng.choice([20, 50, 100])),
+            order_date=datetime.combine(end - timedelta(days=int(rng.uniform(0, 7))), datetime.min.time()),
+            status="delivered",
+            is_ai_suggested=True,
+            order_source="ai_recommendation",
+            savings_amount=round(float(rng.uniform(800, 3500)), 0),
+        )
+        db.add(delivered_order)
+        orders_created += 1
+
+        placed_sku = rng.choice(top_skus)
+        placed_order = DealerOrder(
+            dealer_id=dealer.id,
+            sku_id=placed_sku.id,
+            quantity=int(rng.choice([20, 50, 100])),
+            order_date=datetime.combine(end, datetime.min.time()),
+            status="placed",
+            is_ai_suggested=False,
+            order_source="manual",
+            savings_amount=0.0,
+        )
+        db.add(placed_order)
+        orders_created += 1
 
     db.flush()
     print(f"  Created {orders_created} dealer orders.")
@@ -404,6 +443,48 @@ def seed_users(db: Session, dealers: list[Dealer]):
     print(f"  Customer login: rahul@example.com / customer123")
 
 
+def seed_customer_orders(db: Session, skus: list[SKU], dealers: list[Dealer]):
+    """Seed a few customer orders so customer portal has live order history."""
+    print("Seeding customer orders...")
+    customers = db.query(User).filter(User.role == "customer", User.is_active == True).all()
+    if not customers or not dealers:
+        print("  Skipped customer orders (no customers or dealers).")
+        return
+
+    created = 0
+    eligible_skus = skus[:20] if len(skus) >= 20 else skus
+    statuses = ["requested", "contacted", "fulfilled"]
+
+    for idx, customer in enumerate(customers):
+        sku = rng.choice(eligible_skus)
+        quantity = int(rng.choice([1, 2, 3, 4]))
+        dealer = dealers[idx % len(dealers)]
+        status = statuses[idx % len(statuses)]
+        created_at = datetime.combine(SIM_DATE - timedelta(days=idx), datetime.min.time()).replace(hour=11, minute=15)
+        total_amount = round(sku.mrp * quantity, 2)
+
+        order = CustomerOrder(
+            user_id=customer.id,
+            dealer_id=dealer.id,
+            status=status,
+            total_amount=total_amount,
+            created_at=created_at,
+        )
+        db.add(order)
+        db.flush()
+
+        db.add(CustomerOrderItem(
+            order_id=order.id,
+            sku_id=sku.id,
+            quantity=quantity,
+            unit_price=sku.mrp,
+        ))
+        created += 1
+
+    db.flush()
+    print(f"  Created {created} customer orders.")
+
+
 def run_seed():
     create_tables()
     db = SessionLocal()
@@ -420,6 +501,7 @@ def run_seed():
         seed_transfers(db, warehouses, skus, shades)
         seed_dealer_orders(db, dealers, skus)
         seed_users(db, dealers)
+        seed_customer_orders(db, skus, dealers)
         db.commit()
         print("\nDatabase seeded successfully!")
     except Exception as e:

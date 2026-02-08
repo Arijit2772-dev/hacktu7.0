@@ -15,13 +15,12 @@ export default function OrderDetail() {
   const { orderId } = useParams()
   const { user } = useAuth()
   const toast = useToast()
-  const dealerId = user?.dealer_id || 1
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [confirmAction, setConfirmAction] = useState(null)
 
   const load = () => {
-    fetchOrderDetail(dealerId, orderId)
+    fetchOrderDetail(orderId)
       .then(r => setOrder(r.data))
       .catch(err => toast.error('Failed to load order'))
       .finally(() => setLoading(false))
@@ -31,7 +30,7 @@ export default function OrderDetail() {
 
   const handleStatusChange = async () => {
     try {
-      const res = await updateOrderStatus(dealerId, orderId, confirmAction)
+      const res = await updateOrderStatus(orderId, confirmAction)
       toast.success(res.data.message)
       setConfirmAction(null)
       load()

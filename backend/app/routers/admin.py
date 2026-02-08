@@ -1,7 +1,18 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.services.analytics_service import get_dashboard_summary, get_dealer_performance, get_top_skus
+from app.middleware.auth import require_admin
+from app.services.analytics_service import (
+    get_dashboard_summary,
+    get_dealer_performance,
+    get_top_skus,
+    get_revenue_breakdown,
+    get_stockout_details,
+    get_dealer_distribution,
+    get_warehouse_utilization,
+)
 from app.services.inventory_service import (
     get_warehouse_map_data, get_warehouse_inventory,
     get_recommended_transfers, approve_transfer, get_dead_stock,
@@ -15,12 +26,13 @@ from app.services.admin_crud_service import (
     adjust_inventory,
     create_transfer, complete_transfer, reject_transfer,
 )
+from app.services.audit_service import list_audit_logs
 from app.schemas.admin import (
     ProductCreate, ProductUpdate, ShadeCreate, ShadeUpdate, SKUCreate,
     WarehouseCreate, DealerUpdate, InventoryAdjustment, TransferCreate,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_admin)])
 
 
 # ─── Dashboard ───
@@ -107,7 +119,16 @@ def get_products(db: Session = Depends(get_db)):
 
 @router.post("/products")
 def create_product_endpoint(data: ProductCreate, db: Session = Depends(get_db)):
-    p = create_product(db, data.name, data.category, data.finish, data.price_per_litre)
+    p = create_product(
+        db,
+        name=data.name,
+        category=data.category,
+        sub_category=data.sub_category,
+        base_type=data.base_type,
+        finish=data.finish,
+        sizes_available=data.sizes_available,
+        price_per_litre=data.price_per_litre,
+    )
     return {"success": True, "product": {"id": p.id, "name": p.name}}
 
 
@@ -175,3 +196,56 @@ def adjust_inventory_endpoint(data: InventoryAdjustment, db: Session = Depends(g
 @router.get("/top-skus")
 def top_skus(limit: int = 10, db: Session = Depends(get_db)):
     return get_top_skus(db, limit)
+
+
+# ─── Analytics Drill-down ───
+
+@router.get("/analytics/revenue-breakdown")
+def revenue_breakdown(days: int = 30, db: Session = Depends(get_db)):
+    return get_revenue_breakdown(db, days=days)
+
+
+@router.get("/analytics/stockout-details")
+def stockout_details(db: Session = Depends(get_db)):
+    return get_stockout_details(db)
+
+
+@router.get("/analytics/dealer-distribution")
+def dealer_distribution(db: Session = Depends(get_db)):
+    return get_dealer_distribution(db)
+
+
+@router.get("/analytics/warehouse-utilization")
+def warehouse_utilization(db: Session = Depends(get_db)):
+    return get_warehouse_utilization(db)
+
+
+@router.get("/audit/logs")
+def audit_logs(
+    limit: int = 100,
+    offset: int = 0,
+    user_id: int | None = None,
+    action: str | None = None,
+    status_code: int | None = None,
+    method: str | None = None,
+    role: str | None = None,
+    path: str | None = None,
+    request_id: str | None = None,
+    created_from: datetime | None = None,
+    created_to: datetime | None = None,
+    db: Session = Depends(get_db),
+):
+    return list_audit_logs(
+        db,
+        limit=limit,
+        offset=offset,
+        user_id=user_id,
+        action=action,
+        status_code=status_code,
+        method=method,
+        role=role,
+        path=path,
+        request_id=request_id,
+        created_from=created_from,
+        created_to=created_to,
+    )

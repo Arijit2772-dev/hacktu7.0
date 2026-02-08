@@ -5,8 +5,14 @@ Transfer recommendations, auto-balance, inventory health.
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import InventoryLevel, InventoryTransfer, Warehouse, SKU, Shade
+from fastapi import HTTPException, status
+from app.models import InventoryLevel, InventoryTransfer, Warehouse, SKU, Shade, Dealer
+from app.models.user import User
 from datetime import datetime
+import logging
+
+
+logger = logging.getLogger("paintflow.inventory")
 
 
 def get_warehouse_map_data(db: Session) -> list[dict]:
@@ -115,9 +121,9 @@ def get_recommended_transfers(db: Session) -> list[dict]:
 
         result.append({
             "id": t.id,
-            "from_warehouse": {"id": from_wh.id, "name": from_wh.name, "city": from_wh.city,
+            "from_warehouse": {"id": from_wh.id, "name": from_wh.name, "city": from_wh.city, "state": from_wh.state,
                                "lat": from_wh.latitude, "lng": from_wh.longitude} if from_wh else None,
-            "to_warehouse": {"id": to_wh.id, "name": to_wh.name, "city": to_wh.city,
+            "to_warehouse": {"id": to_wh.id, "name": to_wh.name, "city": to_wh.city, "state": to_wh.state,
                              "lat": to_wh.latitude, "lng": to_wh.longitude} if to_wh else None,
             "sku_code": sku.sku_code if sku else "",
             "shade_name": shade.shade_name if shade else "",
@@ -135,40 +141,117 @@ def approve_transfer(db: Session, transfer_id: int) -> dict:
     """Approve a transfer and optimistically update inventory."""
     transfer = db.query(InventoryTransfer).filter(InventoryTransfer.id == transfer_id).first()
     if not transfer:
-        return {"success": False, "message": "Transfer not found"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transfer not found")
+    if transfer.status not in {"PENDING", "APPROVED"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Transfer cannot be approved from status '{transfer.status}'",
+        )
+    if transfer.quantity <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transfer quantity must be positive")
 
-    transfer.status = "IN_TRANSIT"
+    from_level = (
+        db.query(InventoryLevel)
+        .filter(
+            InventoryLevel.warehouse_id == transfer.from_warehouse_id,
+            InventoryLevel.sku_id == transfer.sku_id,
+        )
+        .first()
+    )
+    if not from_level:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Source warehouse inventory record not found",
+        )
+    if from_level.current_stock < transfer.quantity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Insufficient stock in source warehouse ({from_level.current_stock} available)",
+        )
 
-    # Optimistic update: reduce source, increase destination
-    from_level = db.query(InventoryLevel).filter(
-        InventoryLevel.warehouse_id == transfer.from_warehouse_id,
-        InventoryLevel.sku_id == transfer.sku_id,
-    ).first()
+    to_level = (
+        db.query(InventoryLevel)
+        .filter(
+            InventoryLevel.warehouse_id == transfer.to_warehouse_id,
+            InventoryLevel.sku_id == transfer.sku_id,
+        )
+        .first()
+    )
 
-    to_level = db.query(InventoryLevel).filter(
-        InventoryLevel.warehouse_id == transfer.to_warehouse_id,
-        InventoryLevel.sku_id == transfer.sku_id,
-    ).first()
+    try:
+        transfer.status = "IN_TRANSIT"
 
-    if from_level:
-        from_level.current_stock = max(0, from_level.current_stock - transfer.quantity)
+        from_level.current_stock -= transfer.quantity
         from_level.days_of_cover = round(from_level.current_stock / max(transfer.quantity / 30, 1), 1)
 
-    if to_level:
+        if not to_level:
+            to_level = InventoryLevel(
+                warehouse_id=transfer.to_warehouse_id,
+                sku_id=transfer.sku_id,
+                current_stock=0,
+                reorder_point=max(from_level.reorder_point, 1),
+                max_capacity=max(from_level.max_capacity, transfer.quantity * 2),
+                days_of_cover=0,
+                last_updated=datetime.utcnow(),
+            )
+            db.add(to_level)
+
         to_level.current_stock += transfer.quantity
         to_level.days_of_cover = round(to_level.current_stock / max(transfer.quantity / 30, 1), 1)
-
-    db.commit()
+        to_level.last_updated = datetime.utcnow()
+        from_level.last_updated = datetime.utcnow()
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        logger.exception("Failed to approve transfer %s", transfer_id)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to approve transfer") from exc
 
     to_wh = db.query(Warehouse).filter(Warehouse.id == transfer.to_warehouse_id).first()
     from_wh = db.query(Warehouse).filter(Warehouse.id == transfer.from_warehouse_id).first()
     sku = db.query(SKU).filter(SKU.id == transfer.sku_id).first()
     shade = db.query(Shade).filter(Shade.id == sku.shade_id).first() if sku else None
+    shade_name = shade.shade_name if shade else "product"
+    from_city = from_wh.city if from_wh else "source warehouse"
+    to_city = to_wh.city if to_wh else "destination warehouse"
+
+    try:
+        from app.services.notification_service import create_notifications_for_users
+        admin_ids = [row[0] for row in db.query(User.id).filter(User.role == "admin", User.is_active == True).all()]
+        dealer_ids = [
+            row[0]
+            for row in db.query(Dealer.id).filter(
+                Dealer.warehouse_id.in_([transfer.from_warehouse_id, transfer.to_warehouse_id])
+            ).all()
+        ]
+        dealer_user_ids = []
+        if dealer_ids:
+            dealer_user_ids = [
+                row[0]
+                for row in db.query(User.id).filter(
+                    User.role == "dealer",
+                    User.dealer_id.in_(dealer_ids),
+                    User.is_active == True,
+                ).all()
+            ]
+        create_notifications_for_users(
+            db,
+            admin_ids + dealer_user_ids,
+            title="Transfer Approved",
+            message=f"{transfer.quantity} units of {shade_name} moving from {from_city} to {to_city}.",
+            type="success",
+            category="transfer",
+            link="/admin/transfers",
+        )
+    except Exception as e:
+        logger.warning("Failed to create transfer notifications: %s", e)
 
     return {
         "success": True,
-        "message": f"Transfer approved. {transfer.quantity} units of {shade.shade_name if shade else 'product'} "
-                   f"moving from {from_wh.city if from_wh else '?'} to {to_wh.city if to_wh else '?'}. ETA: 2 days.",
+        "message": f"Transfer approved. {transfer.quantity} units of {shade_name} "
+                   f"moving from {from_city} to {to_city}. ETA: 2 days.",
         "transfer_id": transfer.id,
     }
 
