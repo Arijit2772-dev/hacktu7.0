@@ -10,8 +10,8 @@ It includes authentication, dashboards, forecasting, simulations, notifications,
 ## Access URLs
 
 ### Current Public Demo URL (Live now)
-- Main public URL: [https://drove-radio-ordinance-bestsellers.trycloudflare.com](https://drove-radio-ordinance-bestsellers.trycloudflare.com)
-- Short URL: [https://hosturl.info/upZtJ0](https://hosturl.info/upZtJ0) (redirects to the main URL)
+- Main public URL: [https://detective-constitutes-enables-lite.trycloudflare.com](https://detective-constitutes-enables-lite.trycloudflare.com)
+- Short URL (if updated separately): [https://hosturl.info/upZtJ0](https://hosturl.info/upZtJ0)
 
 Note:
 - This is a Cloudflare quick-tunnel link, so it is temporary and can change after restart.
