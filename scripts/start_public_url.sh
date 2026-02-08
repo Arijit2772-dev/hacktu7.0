@@ -6,6 +6,7 @@ RUNTIME_DIR="$ROOT_DIR/.runtime"
 LOG_FILE="$RUNTIME_DIR/cloudflared-host.log"
 URL_FILE="$RUNTIME_DIR/public_url.txt"
 SESSION_NAME="paintflow_tunnel"
+TUNNEL_PROTOCOL="${TUNNEL_PROTOCOL:-http2}"
 
 mkdir -p "$RUNTIME_DIR"
 
@@ -37,7 +38,7 @@ pkill -f "cloudflared tunnel --url http://localhost:5173" >/dev/null 2>&1 || tru
 
 echo "[INFO] Starting Cloudflare quick tunnel"
 tmux new-session -d -s "$SESSION_NAME" \
-  "cloudflared tunnel --url http://localhost:5173 --no-autoupdate --loglevel info 2>&1 | tee '$LOG_FILE'"
+  "cloudflared tunnel --url http://localhost:5173 --protocol $TUNNEL_PROTOCOL --no-autoupdate --loglevel info 2>&1 | tee '$LOG_FILE'"
 
 url=""
 for _ in $(seq 1 90); do
