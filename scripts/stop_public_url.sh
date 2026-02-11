@@ -7,6 +7,7 @@ URL_FILE="$RUNTIME_DIR/public_url.txt"
 SESSION_NAME="paintflow_tunnel"
 
 tmux kill-session -t "$SESSION_NAME" >/dev/null 2>&1 || true
+pkill -f "cloudflared tunnel --url http://127.0.0.1:5173" >/dev/null 2>&1 || true
 pkill -f "cloudflared tunnel --url http://localhost:5173" >/dev/null 2>&1 || true
 : > "$URL_FILE"
 

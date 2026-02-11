@@ -7,6 +7,7 @@ LOG_FILE="$RUNTIME_DIR/cloudflared-host.log"
 URL_FILE="$RUNTIME_DIR/public_url.txt"
 SESSION_NAME="paintflow_tunnel"
 TUNNEL_PROTOCOL="${TUNNEL_PROTOCOL:-http2}"
+TUNNEL_TARGET_URL="${TUNNEL_TARGET_URL:-http://127.0.0.1:5173}"
 
 mkdir -p "$RUNTIME_DIR"
 
@@ -31,6 +32,7 @@ docker compose up -d db backend frontend >/dev/null
 
 # Stop previous session/process if present
 tmux kill-session -t "$SESSION_NAME" >/dev/null 2>&1 || true
+pkill -f "cloudflared tunnel --url http://127.0.0.1:5173" >/dev/null 2>&1 || true
 pkill -f "cloudflared tunnel --url http://localhost:5173" >/dev/null 2>&1 || true
 
 : > "$LOG_FILE"
@@ -38,11 +40,11 @@ pkill -f "cloudflared tunnel --url http://localhost:5173" >/dev/null 2>&1 || tru
 
 echo "[INFO] Starting Cloudflare quick tunnel"
 tmux new-session -d -s "$SESSION_NAME" \
-  "cloudflared tunnel --url http://localhost:5173 --protocol $TUNNEL_PROTOCOL --no-autoupdate --loglevel info 2>&1 | tee '$LOG_FILE'"
+  "cloudflared tunnel --url $TUNNEL_TARGET_URL --protocol $TUNNEL_PROTOCOL --no-autoupdate --loglevel info 2>&1 | tee '$LOG_FILE'"
 
 url=""
 for _ in $(seq 1 90); do
-  if ! pgrep -f "cloudflared tunnel --url http://localhost:5173" >/dev/null 2>&1; then
+  if ! pgrep -f "cloudflared tunnel --url $TUNNEL_TARGET_URL" >/dev/null 2>&1; then
     echo "[ERROR] cloudflared exited unexpectedly"
     tail -n 80 "$LOG_FILE" || true
     exit 1

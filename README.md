@@ -196,6 +196,32 @@ Stop:
 
 Production stack uses `docker-compose.prod.yml` + Caddy TLS (`deploy/Caddyfile`).
 
+### C) One-command VPS deploy (recommended for 24/7 uptime)
+
+Use this script from your local machine to bootstrap server + deploy + print admin creds:
+
+```bash
+./scripts/deploy_24x7_vps.sh \
+  --host <SERVER_IP> \
+  --user <SSH_USER> \
+  --domain paintflow.ai \
+  --acme-email admin@paintflow.ai \
+  --ssh-key ~/.ssh/id_ed25519
+```
+
+What it does:
+- installs Docker and compose plugin on Ubuntu/Debian VPS
+- clones/updates repo on server
+- generates strong production secrets
+- writes server `.env`
+- runs production compose stack (`backend`, `frontend`, `db`, `caddy`)
+- checks `https://<domain>/api/health/live`
+
+Requirements:
+- domain A record already points to VPS IP
+- SSH user has `sudo`
+- ports `80/443` open on VPS firewall/security group
+
 ## Data Ingestion Layer
 
 Admin-authenticated ingestion APIs are available under `/api/ingest`:

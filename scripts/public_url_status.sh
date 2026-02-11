@@ -8,7 +8,8 @@ URL_FILE="$RUNTIME_DIR/public_url.txt"
 SESSION_NAME="paintflow_tunnel"
 
 running="no"
-if pgrep -f "cloudflared tunnel --url http://localhost:5173" >/dev/null 2>&1; then
+if pgrep -f "cloudflared tunnel --url http://127.0.0.1:5173" >/dev/null 2>&1 || \
+   pgrep -f "cloudflared tunnel --url http://localhost:5173" >/dev/null 2>&1; then
   running="yes"
 fi
 
@@ -28,6 +29,13 @@ fi
 if [[ -n "$url" ]]; then
   echo "url=$url"
   code="$(curl -s -o /dev/null -w '%{http_code}' "$url" || true)"
+  if [[ "$code" == "000" ]]; then
+    # Fallback for local resolver issues: verify via DNS-over-HTTPS.
+    doh_code="$(curl -s -o /dev/null -w '%{http_code}' --doh-url https://1.1.1.1/dns-query "$url" || true)"
+    if [[ "$doh_code" != "000" ]]; then
+      code="$doh_code"
+    fi
+  fi
   echo "url_http_status=$code"
 fi
 

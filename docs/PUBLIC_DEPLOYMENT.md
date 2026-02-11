@@ -2,6 +2,21 @@
 
 This runbook deploys PaintFlow.ai on a single Linux VM with automatic TLS via Caddy.
 
+## 0. Fast Path (automated)
+
+If you want the shortest path, run from your local machine:
+
+```bash
+./scripts/deploy_24x7_vps.sh \
+  --host <SERVER_IP> \
+  --user <SSH_USER> \
+  --domain paintflow.ai \
+  --acme-email admin@paintflow.ai \
+  --ssh-key ~/.ssh/id_ed25519
+```
+
+This script bootstraps Docker on VPS, syncs repo, generates secrets, deploys stack, and prints bootstrap admin credentials.
+
 ## 1. Target Architecture
 
 - `caddy` (public): terminates HTTPS on ports `80/443`
