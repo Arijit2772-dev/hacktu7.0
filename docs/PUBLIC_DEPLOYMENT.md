@@ -148,7 +148,8 @@ docker compose -f docker-compose.prod.yml --env-file .env logs -f frontend
 
 Workflow file: `.github/workflows/deploy-prod.yml`
 
-It deploys on every push to `main` (and manual trigger) by SSH-ing into your VM and running `./scripts/deploy_public.sh`.
+It is manual-only by default to avoid failed deploy emails when repository secrets are not configured. To run it, open GitHub Actions, choose `Deploy Production`, and click `Run workflow`.
+If you want deployment on every push to `main`, first add the secrets below, then re-enable the `push` trigger.
 
 Required repository secrets:
 
