@@ -2,6 +2,27 @@
 
 This runbook deploys PaintFlow.ai on a single Linux VM with automatic TLS via Caddy.
 
+## Current Production Deployment
+
+PaintFlow.ai is currently deployed on Hostinger VPS:
+
+```text
+URL: https://paintflow.82.29.166.114.sslip.io
+VPS IP: 82.29.166.114
+App directory: /opt/paintflow
+Stack: Docker Compose + Caddy HTTPS + PostgreSQL + FastAPI + React/Nginx
+```
+
+Seeded demo accounts:
+
+```text
+Admin: admin@paintflow.ai / admin123
+Dealer: dealer1@paintflow.ai / dealer123
+Customer: rahul@example.com / customer123
+```
+
+To move from the temporary `sslip.io` hostname to `paintflow.ai`, point DNS to `82.29.166.114` and update the server `.env` domain values.
+
 ## 0. Fast Path (automated)
 
 If you want the shortest path, run from your local machine:

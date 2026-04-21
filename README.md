@@ -9,27 +9,28 @@ It includes authentication, dashboards, forecasting, simulations, notifications,
 
 ## Access URLs
 
-### Current Public Demo URL (Live now)
-- Main public URL: [https://detective-constitutes-enables-lite.trycloudflare.com](https://detective-constitutes-enables-lite.trycloudflare.com)
-- Short URL (if updated separately): [https://hosturl.info/upZtJ0](https://hosturl.info/upZtJ0)
+### Current Public Demo URL (24/7 VPS)
+- Stable public URL: [https://paintflow.82.29.166.114.sslip.io](https://paintflow.82.29.166.114.sslip.io)
+- VPS IP: `82.29.166.114`
 
 Note:
-- This is a Cloudflare quick-tunnel link, so it is temporary and can change after restart.
+- This is the always-on VPS deployment. It does not depend on the laptop or Cloudflare quick tunnels.
+- The final branded domain can be switched to `https://paintflow.ai` after DNS `A` records point to `82.29.166.114`.
 
 ### Local (Docker)
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:8000`
 - Swagger: `http://localhost:8000/docs`
 
-### Public (quick tunnel)
-Run:
+### Temporary Public URL (quick tunnel)
+Run only if you specifically need a temporary tunnel from your laptop:
 
 ```bash
 ./scripts/start_public_url.sh
 ./scripts/public_url_status.sh
 ```
 
-The live URL is written to `.runtime/public_url.txt` (Cloudflare quick tunnel, temporary URL).
+The live URL is written to `.runtime/public_url.txt` (Cloudflare quick tunnel, temporary URL). Prefer the VPS URL above for demos.
 
 ## Demo Credentials (Seeded)
 
@@ -175,7 +176,27 @@ Stop:
 ./scripts/stop_public_url.sh
 ```
 
-### B) Real domain deployment (`https://your-domain`)
+### B) Current VPS deployment
+
+Current production deployment:
+
+```text
+URL: https://paintflow.82.29.166.114.sslip.io
+Server IP: 82.29.166.114
+Provider: Hostinger VPS
+Stack: Docker Compose + PostgreSQL + FastAPI + React/Nginx + Caddy HTTPS
+```
+
+To switch to `https://paintflow.ai`, add DNS records in the domain provider:
+
+```text
+A    @      82.29.166.114
+A    www    82.29.166.114
+```
+
+Then update the VPS `.env` `DOMAIN` and `CORS_ALLOWED_ORIGINS`, and restart Caddy/backend.
+
+### C) Real domain deployment (`https://your-domain`)
 
 1. Configure DNS for your domain (e.g. `paintflow.ai`) to your server IP.
 2. Fill `.env` with production values, including:
@@ -196,7 +217,7 @@ Stop:
 
 Production stack uses `docker-compose.prod.yml` + Caddy TLS (`deploy/Caddyfile`).
 
-### C) One-command VPS deploy (recommended for 24/7 uptime)
+### D) One-command VPS deploy (recommended for 24/7 uptime)
 
 Use this script from your local machine to bootstrap server + deploy + print admin creds:
 
@@ -287,6 +308,8 @@ docker exec -i paintflow-backend python /app/seed/generate_data.py
 Most likely database is empty. Re-run seed command above.
 
 ### Public link not opening
+Use the VPS URL first: [https://paintflow.82.29.166.114.sslip.io](https://paintflow.82.29.166.114.sslip.io).
+
 If using quick tunnel, URL may have changed. Run:
 
 ```bash
