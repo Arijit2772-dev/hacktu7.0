@@ -7,7 +7,8 @@ This runbook deploys PaintFlow.ai on a single Linux VM with automatic TLS via Ca
 PaintFlow.ai is currently deployed on Hostinger VPS:
 
 ```text
-URL: https://paintflow.82.29.166.114.sslip.io
+HTTPS URL: https://paintflow.82.29.166.114.sslip.io
+Direct IP fallback: http://82.29.166.114
 VPS IP: 82.29.166.114
 App directory: /opt/paintflow
 Stack: Docker Compose + Caddy HTTPS + PostgreSQL + FastAPI + React/Nginx
@@ -21,7 +22,7 @@ Dealer: dealer1@paintflow.ai / dealer123
 Customer: rahul@example.com / customer123
 ```
 
-To move from the temporary `sslip.io` hostname to `paintflow.ai`, point DNS to `82.29.166.114` and update the server `.env` domain values.
+To move from the temporary `sslip.io` hostname to `paintflow.ai`, point DNS to `82.29.166.114` and update the server `.env` domain values. Use the direct IP fallback if `sslip.io` is blocked by DNS filtering or HTTPS inspection.
 
 ## 0. Fast Path (automated)
 

@@ -2,6 +2,27 @@
     email {$ACME_EMAIL}
 }
 
+# Plain HTTP fallback for demos when wildcard DNS or HTTPS inspection blocks
+# sslip.io/nip.io hostnames. The canonical domain below still uses HTTPS.
+:80 {
+    encode gzip zstd
+
+    @backend path /api* /docs* /redoc* /openapi.json /metrics*
+    handle @backend {
+        reverse_proxy backend:8000
+    }
+
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
 {$DOMAIN} {
     encode gzip zstd
 

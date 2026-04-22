@@ -10,11 +10,13 @@ It includes authentication, dashboards, forecasting, simulations, notifications,
 ## Access URLs
 
 ### Current Public Demo URL (24/7 VPS)
-- Stable public URL: [https://paintflow.82.29.166.114.sslip.io](https://paintflow.82.29.166.114.sslip.io)
+- Stable HTTPS URL: [https://paintflow.82.29.166.114.sslip.io](https://paintflow.82.29.166.114.sslip.io)
+- Direct IP fallback: [http://82.29.166.114](http://82.29.166.114)
 - VPS IP: `82.29.166.114`
 
 Note:
 - This is the always-on VPS deployment. It does not depend on the laptop or Cloudflare quick tunnels.
+- Use the direct IP fallback if `sslip.io` is blocked by DNS filtering or corporate/mobile security software.
 - The final branded domain can be switched to `https://paintflow.ai` after DNS `A` records point to `82.29.166.114`.
 
 ### Local (Docker)
@@ -181,7 +183,8 @@ Stop:
 Current production deployment:
 
 ```text
-URL: https://paintflow.82.29.166.114.sslip.io
+HTTPS URL: https://paintflow.82.29.166.114.sslip.io
+Direct IP fallback: http://82.29.166.114
 Server IP: 82.29.166.114
 Provider: Hostinger VPS
 Stack: Docker Compose + PostgreSQL + FastAPI + React/Nginx + Caddy HTTPS
@@ -308,7 +311,7 @@ docker exec -i paintflow-backend python /app/seed/generate_data.py
 Most likely database is empty. Re-run seed command above.
 
 ### Public link not opening
-Use the VPS URL first: [https://paintflow.82.29.166.114.sslip.io](https://paintflow.82.29.166.114.sslip.io).
+Use the direct IP fallback first: [http://82.29.166.114](http://82.29.166.114). If your network allows `sslip.io`, use [https://paintflow.82.29.166.114.sslip.io](https://paintflow.82.29.166.114.sslip.io).
 
 If using quick tunnel, URL may have changed. Run:
 
