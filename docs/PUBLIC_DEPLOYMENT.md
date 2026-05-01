@@ -7,7 +7,8 @@ This runbook deploys PaintFlow.ai on a single Linux VM with automatic TLS via Ca
 PaintFlow.ai is currently deployed on Hostinger VPS:
 
 ```text
-HTTPS URL: https://paintflow.82.29.166.114.sslip.io
+Primary HTTPS URL: https://paintflow.online
+Secondary HTTPS URL: https://www.paintflow.online
 Direct IP fallback: http://82.29.166.114
 VPS IP: 82.29.166.114
 App directory: /opt/paintflow
@@ -22,7 +23,7 @@ Dealer: dealer1@paintflow.ai / dealer123
 Customer: rahul@example.com / customer123
 ```
 
-To move from the temporary `sslip.io` hostname to `paintflow.ai`, point DNS to `82.29.166.114` and update the server `.env` domain values. Use the direct IP fallback if `sslip.io` is blocked by DNS filtering or HTTPS inspection.
+DNS now points `paintflow.online` and `www.paintflow.online` to `82.29.166.114`. Use the direct IP fallback if the domain is temporarily unavailable from your network.
 
 ## 0. Fast Path (automated)
 
@@ -32,7 +33,7 @@ If you want the shortest path, run from your local machine:
 ./scripts/deploy_24x7_vps.sh \
   --host <SERVER_IP> \
   --user <SSH_USER> \
-  --domain paintflow.ai \
+  --domain paintflow.online \
   --acme-email admin@paintflow.ai \
   --ssh-key ~/.ssh/id_ed25519
 ```
@@ -59,8 +60,8 @@ Only Caddy is internet-facing. Backend and DB are not exposed publicly.
 
 Create DNS records pointing to the VM public IP:
 
-- `A` record: `paintflow.ai -> <SERVER_PUBLIC_IP>`
-- Optional: `A` record: `www.paintflow.ai -> <SERVER_PUBLIC_IP>`
+- `A` record: `paintflow.online -> <SERVER_PUBLIC_IP>`
+- Optional: `CNAME` record: `www.paintflow.online -> paintflow.online`
 
 ## 4. Server Bootstrap (one-time)
 
@@ -122,13 +123,14 @@ docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env ps
-curl -fsS https://paintflow.ai/api/health/live
-curl -fsS https://paintflow.ai/api/health/ready
+curl -fsS https://paintflow.online/api/health/live
+curl -fsS https://paintflow.online/api/health/ready
 ```
 
 Open in browser:
 
-- `https://paintflow.ai`
+- `https://paintflow.online`
+- `https://www.paintflow.online`
 
 ## 9. Operate / Update
 
@@ -175,8 +177,8 @@ git checkout <last-known-good-commit>
 - Restrict SSH (key auth only, disable password login)
 - Turn on automatic security updates
 - Set external uptime monitoring for:
-  - `https://paintflow.ai/api/health/live`
-  - `https://paintflow.ai/api/health/ready`
+  - `https://paintflow.online/api/health/live`
+  - `https://paintflow.online/api/health/ready`
 - Backup DB volume on schedule (`pg_dump` daily)
 
 ## 13. Notes

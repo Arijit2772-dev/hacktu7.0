@@ -10,14 +10,15 @@ It includes authentication, dashboards, forecasting, simulations, notifications,
 ## Access URLs
 
 ### Current Public Demo URL (24/7 VPS)
-- Stable HTTPS URL: [https://paintflow.82.29.166.114.sslip.io](https://paintflow.82.29.166.114.sslip.io)
+- Primary HTTPS URL: [https://paintflow.online](https://paintflow.online)
+- Secondary HTTPS URL: [https://www.paintflow.online](https://www.paintflow.online)
 - Direct IP fallback: [http://82.29.166.114](http://82.29.166.114)
 - VPS IP: `82.29.166.114`
 
 Note:
 - This is the always-on VPS deployment. It does not depend on the laptop or Cloudflare quick tunnels.
-- Use the direct IP fallback if `sslip.io` is blocked by DNS filtering or corporate/mobile security software.
-- The final branded domain can be switched to `https://paintflow.ai` after DNS `A` records point to `82.29.166.114`.
+- Use the direct IP fallback if your network has DNS filtering, HTTPS inspection, or temporary domain reachability issues.
+- The Hostinger-backed production domain is live on `https://paintflow.online` with `https://www.paintflow.online` as an additional hostname.
 
 ### Local (Docker)
 - Frontend: `http://localhost:5173`
@@ -183,25 +184,24 @@ Stop:
 Current production deployment:
 
 ```text
-HTTPS URL: https://paintflow.82.29.166.114.sslip.io
+Primary HTTPS URL: https://paintflow.online
+Secondary HTTPS URL: https://www.paintflow.online
 Direct IP fallback: http://82.29.166.114
 Server IP: 82.29.166.114
 Provider: Hostinger VPS
 Stack: Docker Compose + PostgreSQL + FastAPI + React/Nginx + Caddy HTTPS
 ```
 
-To switch to `https://paintflow.ai`, add DNS records in the domain provider:
+Current DNS shape:
 
 ```text
-A    @      82.29.166.114
-A    www    82.29.166.114
+A      @      82.29.166.114
+CNAME  www    paintflow.online
 ```
-
-Then update the VPS `.env` `DOMAIN` and `CORS_ALLOWED_ORIGINS`, and restart Caddy/backend.
 
 ### C) Real domain deployment (`https://your-domain`)
 
-1. Configure DNS for your domain (e.g. `paintflow.ai`) to your server IP.
+1. Configure DNS for your domain (for example `paintflow.online`) to your server IP.
 2. Fill `.env` with production values, including:
    - `DOMAIN`
    - `ACME_EMAIL`
@@ -228,7 +228,7 @@ Use this script from your local machine to bootstrap server + deploy + print adm
 ./scripts/deploy_24x7_vps.sh \
   --host <SERVER_IP> \
   --user <SSH_USER> \
-  --domain paintflow.ai \
+  --domain paintflow.online \
   --acme-email admin@paintflow.ai \
   --ssh-key ~/.ssh/id_ed25519
 ```
@@ -311,7 +311,9 @@ docker exec -i paintflow-backend python /app/seed/generate_data.py
 Most likely database is empty. Re-run seed command above.
 
 ### Public link not opening
-Use the direct IP fallback first: [http://82.29.166.114](http://82.29.166.114). If your network allows `sslip.io`, use [https://paintflow.82.29.166.114.sslip.io](https://paintflow.82.29.166.114.sslip.io).
+Use the production domain first: [https://paintflow.online](https://paintflow.online) or [https://www.paintflow.online](https://www.paintflow.online).
+
+If your network has DNS or HTTPS filtering issues, use the direct IP fallback: [http://82.29.166.114](http://82.29.166.114).
 
 If using quick tunnel, URL may have changed. Run:
 
